@@ -4,6 +4,17 @@
   "description": "Per-provider plan usage status line for pi — OpenCode Go, ZAI/GLM Coding Plan, DeepSeek",
   "type": "module",
   "private": true,
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
   "main": "index.ts",
   "scripts": {
     "check": "tsc --noEmit",
