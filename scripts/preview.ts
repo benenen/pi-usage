@@ -24,7 +24,11 @@ function renderView(view: ProviderView): string {
 }
 
 const segments: string[] = [];
+// When run inside pi, only show the provider of the active session
+// (mirrors the extension; omit PI_PROVIDER to preview every provider).
+const activeProvider = process.env.PI_PROVIDER;
 for (const p of PROVIDERS) {
+  if (activeProvider && !p.piProviderIds.includes(activeProvider)) continue;
   const key = resolveKey(p.id, p.envVar);
   if (!key) {
     console.error(`[skip] ${p.id}: no key (checked ~/.pi/keys/${p.id}, ${p.envVar}, bridge.toml)`);

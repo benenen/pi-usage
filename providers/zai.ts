@@ -47,6 +47,9 @@ async function fetchZai(key: string) {
 
 export const zaiProvider: Provider = {
   id: "zai",
+  // Global ("zai") and China ("zai-coding-cn") coding plans; both
+  // endpoints serve the same usage API and accept the same key.
+  piProviderIds: ["zai", "zai-coding-cn"],
   label: "glm",
   envVar: "ZAI_API_KEY",
   fetch: fetchZai,

@@ -34,6 +34,7 @@ async function fetchGo(key: string) {
 
 export const goProvider: Provider = {
   id: "go",
+  piProviderIds: ["opencode-go"],
   label: "go",
   envVar: "OPENCODE_GO_API_KEY",
   fetch: fetchGo,

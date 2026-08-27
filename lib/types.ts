@@ -24,6 +24,8 @@ export interface ProviderView {
 export interface Provider {
   /** Short id, also used for ~/.pi/keys/<id> key lookup. */
   id: string;
+  /** pi provider ids of the active session (ctx.model.provider). */
+  piProviderIds: string[];
   /** Label shown in the status line. */
   label: string;
   /** Env var checked for the API key. */

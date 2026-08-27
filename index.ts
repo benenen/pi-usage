@@ -1,8 +1,11 @@
 /**
  * pi-usage — per-provider plan usage in the pi status line.
  *
- * Renders one segment per configured provider, e.g.:
- *   ☁ go 5h 0% | wk 10% | mo 5% · reset 4h40m · glm 5h 17% | wk 17% · ds ¥9.93
+ * Renders one segment for the provider backing the current session, e.g.:
+ *   ☁ go 5h 0% | wk 10% | mo 5% · reset 4h40m
+ *
+ * Only the provider matching ctx.model.provider is fetched; with a GLM
+ * session the line shows glm 5h 17% · reset 4h23m instead.
  *
  * Each segment is colored by its most urgent window:
  *   >=90% error, >=70% warning, otherwise success. Windows refresh
@@ -47,11 +50,13 @@ function renderView(theme: Theme, view: ProviderView): string {
   return parts.join(dim(" | "));
 }
 
-async function update(ui: any) {
+async function update(ui: any, activeProvider?: string) {
   const dim = (s: string) => ui.theme.fg("dim", s);
   const segments: string[] = [];
 
   for (const p of PROVIDERS) {
+    // Only show the provider backing the current session.
+    if (activeProvider && !p.piProviderIds.includes(activeProvider)) continue;
     const key = resolveKey(p.id, p.envVar);
     if (!key) continue;
     try {
@@ -72,15 +77,27 @@ async function update(ui: any) {
 
 export default function (pi: ExtensionAPI) {
   let timer: ReturnType<typeof setInterval> | null = null;
+  let activeProvider: string | undefined;
+
+  function startTimer(ui: any) {
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => update(ui, activeProvider), REFRESH_MS);
+  }
 
   pi.on("session_start", async (_event, ctx) => {
-    const ui = ctx.ui;
-    await update(ui);
-    timer = setInterval(() => update(ui), REFRESH_MS);
+    activeProvider = ctx.model?.provider;
+    await update(ctx.ui, activeProvider);
+    startTimer(ctx.ui);
   });
 
   pi.on("turn_end", async (_event, ctx) => {
-    await update(ctx.ui);
+    await update(ctx.ui, activeProvider);
+  });
+
+  pi.on("model_select", async (event, ctx) => {
+    activeProvider = event.model?.provider;
+    await update(ctx.ui, activeProvider);
+    startTimer(ctx.ui);
   });
 
   pi.on("session_shutdown", async () => {

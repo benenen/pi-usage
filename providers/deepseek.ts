@@ -17,6 +17,7 @@ async function fetchDeepseek(key: string) {
 
 export const deepseekProvider: Provider = {
   id: "deepseek",
+  piProviderIds: ["deepseek"],
   label: "ds",
   envVar: "DEEPSEEK_API_KEY",
   fetch: fetchDeepseek,

@@ -15,7 +15,7 @@ Per-provider plan usage in the [pi](https://github.com/earendil-works/pi-mono) s
 | DeepSeek | `ds` | `GET api.deepseek.com/user/balance` | pay-as-you-go CNY balance |
 | OpenCode Zen | — | *(no public usage endpoint yet)* | reserved |
 
-A provider is shown only when its API key resolves and the endpoint answers; failures hide that segment silently.
+A provider is shown only when it backs the current session (`ctx.model.provider`), its API key resolves, and the endpoint answers; failures hide that segment silently. Switching sessions to another provider shows that provider's usage instead.
 
 ## Keys
 
@@ -63,7 +63,7 @@ providers/deepseek.ts  DeepSeek
 
 ## Adding a provider
 
-1. Create `providers/<id>.ts` exporting a `Provider` (`id`, `label`, `envVar`, `fetch(key) → { windows?, note? } | null`).
+1. Create `providers/<id>.ts` exporting a `Provider` (`id`, `piProviderIds` — the matching pi provider id(s) from `ctx.model.provider`, `label`, `envVar`, `fetch(key) → { windows?, note? } | null`).
 2. Append it to `PROVIDERS` in `index.ts`.
 3. Drop the key in `~/.pi/keys/<id>`.
 
