@@ -21,12 +21,15 @@ A provider is shown only when it backs the current session (`ctx.model.provider`
 
 First match wins:
 
-1. `~/.pi/keys/<provider id>` — plain text, `chmod 600` recommended
-2. environment variable — `OPENCODE_GO_API_KEY`, `ZAI_API_KEY`, `DEEPSEEK_API_KEY`
+1. Pi's own resolved auth for the session provider — `ctx.modelRegistry.getApiKeyForProvider` (whatever you configured with `/login` or in `~/.pi/agent/auth.json`; usually nothing to do)
+2. `~/.pi/keys/<provider id>` — plain text, `chmod 600` recommended
+3. environment variable — `OPENCODE_GO_API_KEY`, `ZAI_API_KEY`, `DEEPSEEK_API_KEY`
+
+If your pi provider is already authenticated (e.g. you can chat with it), the status line just works — no extra setup. Only use the file/env paths when the endpoint needs a key that differs from the session's pi auth (e.g. a bare DeepSeek balance key while chatting via OpenCode Go):
 
 ```bash
 mkdir -p ~/.pi/keys
-printf '%s' 'sk-...' > ~/.pi/keys/go
+printf '%s' 'sk-...' > ~/.pi/keys/deepseek
 chmod 600 ~/.pi/keys/*
 ```
 
@@ -64,7 +67,7 @@ providers/deepseek.ts  DeepSeek
 
 1. Create `providers/<id>.ts` exporting a `Provider` (`id`, `piProviderIds` — the matching pi provider id(s) from `ctx.model.provider`, `label`, `envVar`, `fetch(key) → { windows?, note? } | null`).
 2. Append it to `PROVIDERS` in `index.ts`.
-3. Drop the key in `~/.pi/keys/<id>`.
+3. If the endpoint needs a key that isn't the session's pi auth, drop it in `~/.pi/keys/<id>`.
 
 ## License
 

@@ -14,8 +14,10 @@
  *   entry is hidden.
  *
  * Key resolution per provider (first match wins):
- *   1. ~/.pi/keys/<id>          (plain text, chmod 600)
- *   2. env <PROVIDER>_API_KEY
+ *   1. pi's own resolved auth for the session provider
+ *      (ctx.modelRegistry.getApiKeyForProvider — auth.json / /login)
+ *   2. ~/.pi/keys/<id>          (plain text, chmod 600)
+ *   3. env <PROVIDER>_API_KEY
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -30,6 +32,34 @@ const REFRESH_MS = 5 * 60 * 1000;
 const STATUS_ID = "pi-usage";
 
 const PROVIDERS: Provider[] = [goProvider, zaiProvider, deepseekProvider];
+
+/** Minimal surface of ctx.modelRegistry used for key resolution. */
+interface KeyRegistry {
+  getApiKeyForProvider(provider: string): Promise<string | undefined>;
+}
+
+/**
+ * Resolve the API key for a usage provider, first match wins:
+ *   1. pi's own resolved auth (auth.json / login) for the session provider
+ *   2. ~/.pi/keys/<id> plain-text file
+ *   3. env <PROVIDER>_API_KEY
+ */
+async function resolveProviderKey(
+  p: Provider,
+  registry?: KeyRegistry,
+): Promise<string | null | undefined> {
+  if (registry) {
+    for (const pid of p.piProviderIds) {
+      try {
+        const key = await registry.getApiKeyForProvider(pid);
+        if (key) return key;
+      } catch {
+        /* try the next pi provider id */
+      }
+    }
+  }
+  return resolveKey(p.id, p.envVar);
+}
 
 /** "5h 17% | wk 17% · reset 4h23m · lite" for one provider's view. */
 function renderView(theme: Theme, view: ProviderView): string {
@@ -49,14 +79,14 @@ function renderView(theme: Theme, view: ProviderView): string {
   return parts.join(dim(" | "));
 }
 
-async function update(ui: any, activeProvider?: string) {
+async function update(ui: any, activeProvider?: string, registry?: KeyRegistry) {
   const dim = (s: string) => ui.theme.fg("dim", s);
   const segments: string[] = [];
 
   for (const p of PROVIDERS) {
     // Only show the provider backing the current session.
     if (activeProvider && !p.piProviderIds.includes(activeProvider)) continue;
-    const key = resolveKey(p.id, p.envVar);
+    const key = await resolveProviderKey(p, registry);
     if (!key) continue;
     try {
       const view = await p.fetch(key);
@@ -77,25 +107,28 @@ async function update(ui: any, activeProvider?: string) {
 export default function (pi: ExtensionAPI) {
   let timer: ReturnType<typeof setInterval> | null = null;
   let activeProvider: string | undefined;
+  let registry: KeyRegistry | undefined;
 
   function startTimer(ui: any) {
     if (timer) clearInterval(timer);
-    timer = setInterval(() => update(ui, activeProvider), REFRESH_MS);
+    timer = setInterval(() => update(ui, activeProvider, registry), REFRESH_MS);
   }
 
   pi.on("session_start", async (_event, ctx) => {
     activeProvider = ctx.model?.provider;
-    await update(ctx.ui, activeProvider);
+    registry = ctx.modelRegistry;
+    await update(ctx.ui, activeProvider, registry);
     startTimer(ctx.ui);
   });
 
   pi.on("turn_end", async (_event, ctx) => {
-    await update(ctx.ui, activeProvider);
+    await update(ctx.ui, activeProvider, registry);
   });
 
-  pi.on("model_select", async (event, ctx) => {
+  pi.on("model_select", async (event: any, ctx) => {
     activeProvider = event.model?.provider;
-    await update(ctx.ui, activeProvider);
+    registry = ctx.modelRegistry;
+    await update(ctx.ui, activeProvider, registry);
     startTimer(ctx.ui);
   });
 
