@@ -1,4 +1,8 @@
-/** API key resolution: ~/.pi/keys/<id> -> env var. */
+/**
+ * Fallback API key resolution (~/.pi/keys/<id> -> env var).
+ * index.ts tries pi's own resolved auth (ctx.modelRegistry) first;
+ * this only runs when that yields no key.
+ */
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
