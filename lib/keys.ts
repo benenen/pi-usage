@@ -1,4 +1,4 @@
-/** API key resolution: ~/.pi/keys/<id> -> env var -> bridge.toml. */
+/** API key resolution: ~/.pi/keys/<id> -> env var. */
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -17,29 +17,6 @@ function fromKeyFile(id: string): string | null {
   return null;
 }
 
-function fromBridgeToml(provider: string): string | null {
-  try {
-    const candidates = [
-      join(homedir(), "src", "workspace", "github", "ai-api-bridge", "bridge.toml"),
-      join(homedir(), ".config", "ai-api-bridge", "bridge.toml"),
-      "/etc/ai-api-bridge/bridge.toml",
-    ];
-    for (const file of candidates) {
-      if (!existsSync(file)) continue;
-      const text = readFileSync(file, "utf8");
-      // each [providers.x] section runs until the next [header]
-      for (const section of text.split(/(?=^\[)/m)) {
-        if (!new RegExp(`^\\[providers\\.${provider}\\]`, "m").test(section)) continue;
-        const m = section.match(/^\s*api_key\s*=\s*"([^"]+)"/m);
-        if (m?.[1]) return m[1];
-      }
-    }
-  } catch {
-    /* fall through */
-  }
-  return null;
-}
-
 export function resolveKey(id: string, envVar: string): string | null {
-  return fromKeyFile(id) ?? process.env[envVar] ?? fromBridgeToml(id);
+  return fromKeyFile(id) ?? process.env[envVar] ?? null;
 }

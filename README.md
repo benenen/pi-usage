@@ -23,7 +23,6 @@ First match wins:
 
 1. `~/.pi/keys/<provider id>` — plain text, `chmod 600` recommended
 2. environment variable — `OPENCODE_GO_API_KEY`, `ZAI_API_KEY`, `DEEPSEEK_API_KEY`
-3. `[providers.<id>] api_key` parsed from `~/src/workspace/github/ai-api-bridge/bridge.toml`
 
 ```bash
 mkdir -p ~/.pi/keys

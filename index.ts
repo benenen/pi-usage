@@ -16,7 +16,6 @@
  * Key resolution per provider (first match wins):
  *   1. ~/.pi/keys/<id>          (plain text, chmod 600)
  *   2. env <PROVIDER>_API_KEY
- *   3. [providers.<id>] api_key parsed from bridge.toml
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
